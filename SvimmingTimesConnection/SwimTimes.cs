@@ -54,29 +54,71 @@ namespace RelayMaker.SvimmingTimesConnection
 
         private Swimmer GetRaceTimes(Swimmer swimmer, HtmlDocument htmlPage)
         {
-            //HtmlNode table = htmlPage.DocumentNode.Element("DataTables_Table_0");
+
             List<Race> races = new List<Race>();
-            var table2 = htmlPage.DocumentNode.SelectNodes("//table");
-            foreach (HtmlNode table in table2.Elements("tbody")) 
+            var tables = htmlPage.DocumentNode.SelectNodes("//table");
+            for(int i = 0; i < tables.Count; i++)
+                //(HtmlNode table in tables.Elements("tbody"))
             {
-                Console.WriteLine("Found: " + table.Id);
-                //TODO: If table is empty
-                foreach (HtmlNode row in table.SelectNodes("tr"))
+                HtmlNode table = tables.Elements("tbody").ElementAt(i);
+                if (table.SelectNodes("tr") != null)
                 {
-                    Console.WriteLine("row");
-                    foreach (HtmlNode cell in row.SelectNodes("th|td"))
+                    foreach (HtmlNode row in table.SelectNodes("tr"))
                     {
-                        Console.WriteLine("cell: " + cell.InnerText);
+                        Race race = GetRaceFromRow(row);
+                        if(i == 0)
+                        {
+                            race.isLongCourse = false;
+                        } else
+                        {
+                            race.isLongCourse = true;
+                        }
+                        races.Add(race);
                     }
                 }
+
+            }
+            swimmer.Races = races;
+            return swimmer;
+        }
+
+        private Race GetRaceFromRow(HtmlNode row)
+        {
+            var rows = row.SelectNodes("th|td");
+            var race = new Race();
+
+            race.style = rows.ElementAt(0).InnerText.Split(' ')[1];
+            race.distance = int.Parse(rows.ElementAt(0).InnerText.Split(' ')[0]);
+
+            var stringTime = rows.ElementAt(1).InnerText;
+            if (stringTime.Contains(":"))
+            {
+                var timeArray = rows.ElementAt(1).InnerText.Split(':');
+                var minuts = int.Parse(timeArray[0]);
+                timeArray = timeArray[1].Split('.');
+                var seconds = int.Parse(timeArray[0]);
+                var hundres = int.Parse(timeArray[1]);
+                race.time = new TimeSpan(0, 0, minuts, seconds, hundres * 10);
+
+            }
+            else
+            {
+                var timeArray = stringTime.Split('.');
+                var seconds = int.Parse(timeArray[0]);
+                var hundres = int.Parse(timeArray[1]);
+                race.time = new TimeSpan(0, 0, 0, seconds, hundres * 10);
             }
 
-            //var divWithTimes = (from bar in htmlPage.DocumentNode.Descendants()
-            //           where bar.GetAttributeValue("id", null) == "k_content_body"
-            //                    select bar).FirstOrDefault();
-            //var list = divWithTimes.Descendants();
-            //var shortCourseTimeTable = divWithTimes.GetClasses();
-            return swimmer;
+            if (!rows.ElementAt(2).InnerText.Equals(""))
+            {
+                race.finaPoints = int.Parse(rows.ElementAt(2).InnerText);
+            }
+            if (!rows.ElementAt(3).InnerText.Equals(""))
+            {
+                race.swimDevelomentPoints = int.Parse(rows.ElementAt(3).InnerText);
+            }
+            race.date = DateTime.Parse(rows.ElementAt(4).InnerText);
+            return race;
         }
 
         private HtmlDocument GetHTMLPage(Swimmer swimmer)

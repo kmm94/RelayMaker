@@ -41,7 +41,7 @@ namespace RelayMaker
 
             List<Swimmer> swimmers = JsonConvert.DeserializeObject<List<Swimmer>>(t.ToString());
 
-            var hehe = SwimTimes.GetInstance().GetSwimmersTimes(swimmers.ElementAt((swimmers.Count-2)));
+            var hehe = SwimTimes.GetInstance().GetSwimmersTimes(swimmers.ElementAt((swimmers.Count - 2)));
         }
     }
 }
